@@ -5,10 +5,12 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 struct ConfigLoadResult {
     Config config;
     std::optional<std::string> warning;
+    std::vector<std::string> diagnostics;
 };
 
 class ConfigLoader {

@@ -10,21 +10,21 @@ class Rule;
 
 class RuleFactory {
 public:
-    // Returns nullptr if ruleId is unknown.
+    // Возвращает nullptr, если ruleId неизвестен.
     static std::unique_ptr<Rule> createById(const std::string& ruleId);
 
-    // Creates all built-in rules in a stable, documented order.
+    // Создает все встроенные правила в стабильном задокументированном порядке.
     std::vector<std::unique_ptr<Rule>> createAllRules() const;
 
-    // Factory Method: creates rules from config (uses config.enabledRules if provided).
+    // Фабричный метод: создает правила из config (использует config.enabledRules, если они заданы).
     std::vector<std::unique_ptr<Rule>> createFromConfig(const Config& config) const;
 
-    // Backward-compatible alias.
+    // Алиас для обратной совместимости.
     std::vector<std::unique_ptr<Rule>> createRules(const Config& config) const;
 
-    // Stable list of all known rule IDs.
+    // Стабильный список всех известных идентификаторов правил.
     static const std::vector<std::string>& allRuleIds();
 
-    // Builds canonical enabled rule IDs from legacy boolean flags (stable order).
+    // Строит канонические id включенных правил из старых boolean-флагов в стабильном порядке.
     static std::vector<std::string> enabledRuleIdsFromFlags(const Config& config);
 };

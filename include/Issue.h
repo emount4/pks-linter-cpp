@@ -16,4 +16,5 @@ struct Issue {
     std::string ruleId;
     std::string message;
     std::string recommendation;
+    std::string ruleName;
 };

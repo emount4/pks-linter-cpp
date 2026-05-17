@@ -37,6 +37,16 @@ public:
         return config_;
     }
 
+    bool saveToFile(const std::filesystem::path& path, std::string* error = nullptr) const
+    {
+        return ConfigLoader::saveToFile(config_, path, error);
+    }
+
+    void reset()
+    {
+        config_ = Config{};
+    }
+
 private:
     ConfigManager() = default;
 

@@ -64,7 +64,7 @@ TEST_CASE("ConfigLoader save and load round-trips the main settings")
     Config config;
     config.extensions = {".cpp", ".h", ".hpp"};
     config.excludedDirs = {"build", "dist"};
-    config.enabledRules = {"STYLE-INDENT", "STYLE-SPACING", "BUG-MEMORY-LEAK"};
+    config.enabledRules = {"STYLE-INDENTATION", "STYLE-SPACING", "BUG-MEMORY-LEAK"};
     config.indentationEnabled = false;
     config.lineLengthEnabled = true;
     config.maxLineLength = 100;
@@ -84,10 +84,10 @@ TEST_CASE("ConfigLoader save and load round-trips the main settings")
 
 TEST_CASE("RuleFactory creates built-in rules by canonical id")
 {
-    auto rule = RuleFactory::createById("STYLE-INDENT");
+    auto rule = RuleFactory::createById("STYLE-INDENTATION");
     REQUIRE(rule != nullptr);
-    REQUIRE(rule->id() == "STYLE-INDENT");
-    REQUIRE(rule->name() == "Indentation");
+    REQUIRE(rule->id() == "STYLE-INDENTATION");
+    REQUIRE(rule->name() == "Отступы");
 
     REQUIRE(RuleFactory::createById("UNKNOWN-RULE") == nullptr);
 }
@@ -100,7 +100,7 @@ TEST_CASE("RuleFactory creates rules from enabled.rules aliases")
     RuleFactory factory;
     auto rules = factory.createFromConfig(config);
     REQUIRE(rules.size() == 6);
-    REQUIRE(rules[0]->id() == "STYLE-INDENT");
+    REQUIRE(rules[0]->id() == "STYLE-INDENTATION");
     REQUIRE(rules[1]->id() == "STYLE-SPACING");
     REQUIRE(rules[2]->id() == "STYLE-LINE-LENGTH");
     REQUIRE(rules[3]->id() == "STYLE-NAMING");
@@ -120,7 +120,7 @@ TEST_CASE("RuleFactory derives enabled rules from legacy boolean flags")
 
     auto ids = RuleFactory::enabledRuleIdsFromFlags(config);
     REQUIRE(ids.size() == 4);
-    REQUIRE(ids[0] == "STYLE-INDENT");
+    REQUIRE(ids[0] == "STYLE-INDENTATION");
     REQUIRE(ids[1] == "STYLE-LINE-LENGTH");
     REQUIRE(ids[2] == "STYLE-NAMING");
     REQUIRE(ids[3] == "BUG-MEMORY-LEAK");

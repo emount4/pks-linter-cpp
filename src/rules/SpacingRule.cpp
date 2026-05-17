@@ -1,5 +1,7 @@
 #include "rules/SpacingRule.h"
 
+#include "SeverityUtil.h"
+
 #include <cctype>
 #include <unordered_set>
 
@@ -28,14 +30,49 @@ bool isWhitespace(char c)
     return c == ' ' || c == '\t';
 }
 
-} // namespace
+bool isTypeLike(const Token& t)
+{
+    if (t.kind == TokenKind::Keyword) {
+        static const std::unordered_set<std::string> types{
+            "int", "double", "float", "char", "bool", "string", "void", "auto", "long", "short", "unsigned", "signed"};
+        return types.find(t.lexeme) != types.end();
+    }
+    return t.kind == TokenKind::Identifier && !t.lexeme.empty() &&
+        std::isupper(static_cast<unsigned char>(t.lexeme.front())) != 0;
+}
 
-void SpacingRule::apply(const FileContext& file, const Config&, AnalysisResult& result) const
+bool isUnaryContext(const std::vector<Token>& tokens, std::size_t index)
+{
+    if (index == 0) {
+        return true;
+    }
+    const auto& prev = tokens[index - 1].lexeme;
+    return prev == "(" || prev == "[" || prev == "{" || prev == "," || prev == "=" || prev == "return" ||
+        prev == "+" || prev == "-" || prev == "*" || prev == "/" || prev == "%";
+}
+
+bool isPointerOrReferenceDeclarator(const std::vector<Token>& tokens, std::size_t index)
+{
+    if (index == 0 || index + 1 >= tokens.size()) {
+        return false;
+    }
+    const auto& tok = tokens[index];
+    if (!(tok.lexeme == "*" || tok.lexeme == "&")) {
+        return false;
+    }
+    return isTypeLike(tokens[index - 1]) && tokens[index + 1].kind == TokenKind::Identifier;
+}
+
+} // пространство имен
+
+void SpacingRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     const std::unordered_set<std::string> ops{
-        "=", "+", "-", "*", "/", "%", "==", "!=", "<=", ">=", "<", ">", "&&", "||", "<<", ">>"};
+        "=", "+", "-", "*", "/", "%", "==", "!=", "<=", ">=", "<", ">", "&&", "||"};
+    const auto severity = configuredSeverity(config, id());
 
-    for (const auto& tok : file.tokens) {
+    for (std::size_t tokenIndex = 0; tokenIndex < file.tokens.size(); ++tokenIndex) {
+        const auto& tok = file.tokens[tokenIndex];
         if (tok.line <= 0 || static_cast<std::size_t>(tok.line) > file.lines.size()) {
             continue;
         }
@@ -49,60 +86,42 @@ void SpacingRule::apply(const FileContext& file, const Config&, AnalysisResult& 
             continue;
         }
 
-        // Comma: require space after
         if (tok.kind == TokenKind::Punctuation && tok.lexeme == ",") {
             const std::size_t idx = static_cast<std::size_t>(start);
             if (idx + 1 < line.size() && !isWhitespace(line[idx + 1])) {
-                result.addIssue(Issue{Severity::Warning,
-                    file.path,
-                    tok.line,
-                    tok.column,
-                    id(),
+                result.addIssue(Issue{severity, file.path, tok.line, tok.column, id(),
                     "После запятой отсутствует пробел.",
-                    "Добавьте пробел после запятой (например: a, b)."});
+                    "Добавьте один пробел после запятой, например: a, b."});
             }
             continue;
         }
 
-        // Operators: require whitespace on both sides (simple heuristic)
-        if (tok.kind == TokenKind::Operator && ops.find(tok.lexeme) != ops.end()) {
-            const std::size_t idx0 = static_cast<std::size_t>(start);
-            const std::size_t idx1 = idx0 + tok.lexeme.size();
+        if (tok.kind != TokenKind::Operator || ops.find(tok.lexeme) == ops.end()) {
+            continue;
+        }
 
-            if (idx0 == 0 || idx1 >= line.size()) {
-                continue;
-            }
+        if ((tok.lexeme == "+" || tok.lexeme == "-") && isUnaryContext(file.tokens, tokenIndex)) {
+            continue;
+        }
+        if ((tok.lexeme == "*" || tok.lexeme == "&") && isUnaryContext(file.tokens, tokenIndex)) {
+            continue;
+        }
+        if (isPointerOrReferenceDeclarator(file.tokens, tokenIndex)) {
+            continue;
+        }
 
-            // Heuristic: skip likely unary +/-, * deref, & address-of
-            auto prevNonSpace = [&](std::size_t from) -> char {
-                while (from > 0) {
-                    --from;
-                    if (!isWhitespace(line[from])) {
-                        return line[from];
-                    }
-                }
-                return '\0';
-            };
+        const std::size_t idx0 = static_cast<std::size_t>(start);
+        const std::size_t idx1 = idx0 + tok.lexeme.size();
+        if (idx0 == 0 || idx1 >= line.size()) {
+            continue;
+        }
 
-            char prev = prevNonSpace(idx0);
-            if ((tok.lexeme == "+" || tok.lexeme == "-") && (prev == '(' || prev == '[' || prev == '{' || prev == ',' || prev == '=')) {
-                continue;
-            }
-            if ((tok.lexeme == "*" || tok.lexeme == "&") && (prev == '(' || prev == '[' || prev == '{' || prev == ',' || prev == '=')) {
-                continue;
-            }
-
-            const char left = line[idx0 - 1];
-            const char right = line[idx1];
-            if (!isWhitespace(left) || !isWhitespace(right)) {
-                result.addIssue(Issue{Severity::Warning,
-                    file.path,
-                    tok.line,
-                    tok.column,
-                    id(),
-                    "Отсутствуют пробелы вокруг оператора '" + tok.lexeme + "'.",
-                    "Добавьте пробелы вокруг оператора (например: a " + tok.lexeme + " b)."});
-            }
+        const char left = line[idx0 - 1];
+        const char right = line[idx1];
+        if (!isWhitespace(left) || !isWhitespace(right)) {
+            result.addIssue(Issue{severity, file.path, tok.line, tok.column, id(),
+                "Отсутствуют пробелы вокруг бинарного оператора '" + tok.lexeme + "'.",
+                "Добавьте пробелы вокруг оператора, например: a " + tok.lexeme + " b."});
         }
     }
 }

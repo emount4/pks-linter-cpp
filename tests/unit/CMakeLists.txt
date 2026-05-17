@@ -1,4 +1,10 @@
 add_executable(cpp_linter_unit_tests
+    config_loader_tests.cpp
+    config_manager_tests.cpp
+    rule_factory_tests.cpp
+    rule_style_tests.cpp
+    rule_bug_tests.cpp
+    reporter_tests.cpp
     config_and_factory_tests.cpp
     tokenizer_tests.cpp
     file_scanner_tests.cpp

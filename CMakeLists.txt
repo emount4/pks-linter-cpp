@@ -13,6 +13,7 @@ add_library(cpp_linter_core STATIC
     src/RuleFactory.cpp
     src/ConfigLoader.cpp
     src/FileScanner.cpp
+    src/InteractiveConfig.cpp
     src/Reporter.cpp
     src/Tokenizer.cpp
     src/rules/IndentationRule.cpp

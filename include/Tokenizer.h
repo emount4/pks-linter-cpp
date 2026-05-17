@@ -9,6 +9,7 @@ enum class TokenKind {
     Number,
     StringLiteral,
     CharLiteral,
+    Comment,
     Operator,
     Punctuation,
 };

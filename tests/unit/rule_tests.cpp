@@ -27,7 +27,7 @@ TEST_CASE("IndentationRule flags tabs and indentation size mismatches")
 
     REQUIRE(result.warningCount() == 2);
     REQUIRE(result.errorCount() == 0);
-    REQUIRE(result.issues[0].ruleId == "STYLE-INDENT");
+    REQUIRE(result.issues[0].ruleId == "STYLE-INDENTATION");
 }
 
 TEST_CASE("LineLengthRule flags only lines longer than the configured maximum")

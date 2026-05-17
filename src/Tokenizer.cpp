@@ -25,7 +25,7 @@ const std::unordered_set<std::string>& keywords()
         "explicit", "export", "extern", "false", "float", "for", "friend", "goto", "if", "inline",
         "int", "long", "mutable", "namespace", "new", "noexcept", "not", "not_eq", "nullptr", "operator",
         "or", "or_eq", "private", "protected", "public", "register", "reinterpret_cast", "requires",
-        "return", "short", "signed", "sizeof", "static", "static_assert", "static_cast", "struct",
+        "return", "short", "signed", "sizeof", "static", "static_assert", "static_cast", "string", "struct",
         "switch", "template", "this", "thread_local", "throw", "true", "try", "typedef", "typeid",
         "typename", "union", "unsigned", "using", "virtual", "void", "volatile", "wchar_t", "while",
         "xor", "xor_eq"};
@@ -45,7 +45,7 @@ bool matchAt(const std::string& input, std::size_t pos, const std::string& s)
     return true;
 }
 
-} // namespace
+}
 
 TokenizationResult Tokenizer::tokenize(const std::string& input) const
 {
@@ -83,46 +83,56 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
             continue;
         }
 
-        // Comments
+        // Комментарии
         if (c == '/' && i + 1 < input.size() && input[i + 1] == '/') {
-            // consume until newline
+            int l = line;
+            int c0 = col;
+            std::string lex = "//";
             i += 2;
             col += 2;
             while (i < input.size() && input[i] != '\n') {
+                lex.push_back(input[i]);
                 ++i;
                 ++col;
             }
+            push(TokenKind::Comment, std::move(lex), l, c0);
             continue;
         }
         if (c == '/' && i + 1 < input.size() && input[i + 1] == '*') {
             int startLine = line;
             int startCol = col;
+            std::string lex = "/*";
             i += 2;
             col += 2;
             bool closed = false;
             while (i < input.size()) {
                 if (input[i] == '\n') {
+                    lex.push_back(input[i]);
                     ++line;
                     col = 1;
                     ++i;
                     continue;
                 }
                 if (input[i] == '*' && i + 1 < input.size() && input[i + 1] == '/') {
+                    lex.push_back('*');
+                    lex.push_back('/');
                     i += 2;
                     col += 2;
                     closed = true;
                     break;
                 }
+                lex.push_back(input[i]);
                 ++i;
                 ++col;
             }
             if (!closed) {
-                res.warnings.push_back({startLine, startCol, "Unclosed block comment"});
+                res.warnings.push_back({startLine, startCol, "Незакрытый блочный комментарий"});
             }
+            push(TokenKind::Comment, std::move(lex), startLine, startCol);
             continue;
         }
 
-        // String literal
+        // Строковый литерал
         if (c == '"') {
             int l = line;
             int c0 = col;
@@ -134,13 +144,13 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
             while (i < input.size()) {
                 char ch = input[i];
                 if (ch == '\n') {
-                    break; // treat as unclosed
+                    break; // считаем литерал незакрытым
                 }
                 lex.push_back(ch);
                 ++i;
                 ++col;
                 if (ch == '\\' && i < input.size()) {
-                    // escape next
+                    // экранируем следующий символ
                     lex.push_back(input[i]);
                     ++i;
                     ++col;
@@ -152,13 +162,13 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
                 }
             }
             if (!closed) {
-                res.warnings.push_back({l, c0, "Unclosed string literal"});
+                res.warnings.push_back({l, c0, "Незакрытый строковый литерал"});
             }
             push(TokenKind::StringLiteral, std::move(lex), l, c0);
             continue;
         }
 
-        // Char literal
+        // Символьный литерал
         if (c == '\'') {
             int l = line;
             int c0 = col;
@@ -187,13 +197,13 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
                 }
             }
             if (!closed) {
-                res.warnings.push_back({l, c0, "Unclosed char literal"});
+                res.warnings.push_back({l, c0, "Незакрытый символьный литерал"});
             }
             push(TokenKind::CharLiteral, std::move(lex), l, c0);
             continue;
         }
 
-        // Identifier / keyword
+        // Идентификатор или ключевое слово
         if (isIdentStart(c)) {
             int l = line;
             int c0 = col;
@@ -214,7 +224,7 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
             continue;
         }
 
-        // Number
+        // Число
         if (std::isdigit(static_cast<unsigned char>(c)) != 0) {
             int l = line;
             int c0 = col;
@@ -236,7 +246,7 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
             continue;
         }
 
-        // Operators
+        // Операторы
         bool matched = false;
         for (const auto& op : ops) {
             if (matchAt(input, i, op)) {
@@ -251,7 +261,7 @@ TokenizationResult Tokenizer::tokenize(const std::string& input) const
             continue;
         }
 
-        // Punctuation
+        // Пунктуация
         {
             int l = line;
             int c0 = col;

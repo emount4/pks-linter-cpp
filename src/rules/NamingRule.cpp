@@ -1,5 +1,7 @@
 #include "rules/NamingRule.h"
 
+#include "SeverityUtil.h"
+
 #include <cctype>
 #include <sstream>
 #include <string_view>
@@ -152,8 +154,8 @@ bool isQualifier(const Token& t)
     return qs.find(t.lexeme) != qs.end();
 }
 
-// Parse simple variable declaration starting at idx.
-// Returns true if consumed a declaration ending with ';' and outputs found variable names.
+// Разбирает простое объявление переменной, начиная с idx.
+// Возвращает true, если разобрано объявление до ';', и записывает найденные имена переменных.
 bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vector<std::pair<Token, bool>>& outVars)
 {
     std::size_t i = idx;
@@ -166,12 +168,12 @@ bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vecto
         ++i;
     }
 
-    // type
+    // Тип
     if (i >= toks.size()) {
         return false;
     }
 
-    // support qualified types: Ident (:: Ident)*
+    // Поддерживаем квалифицированные типы вида Ident (:: Ident)*.
     if (!(isTypeKeyword(toks[i]) || toks[i].kind == TokenKind::Identifier)) {
         return false;
     }
@@ -182,7 +184,7 @@ bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vecto
         i += 2;
     }
 
-    // declarators
+    // Деклараторы
     bool foundAny = false;
     for (;;) {
         while (i < toks.size() && toks[i].kind == TokenKind::Operator && (toks[i].lexeme == "*" || toks[i].lexeme == "&")) {
@@ -196,7 +198,7 @@ bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vecto
         Token nameTok = toks[i];
         ++i;
 
-        // arrays: name[...]
+        // Массивы: name[...]
         if (i < toks.size() && toks[i].lexeme == "[") {
             int depth = 0;
             while (i < toks.size()) {
@@ -216,7 +218,7 @@ bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vecto
         outVars.push_back({nameTok, isConst});
         foundAny = true;
 
-        // Skip initializer (best-effort) until ',' or ';' at depth 0.
+        // Пропускаем инициализатор до ',' или ';' на нулевой глубине.
         if (i < toks.size() && (toks[i].lexeme == "=" || toks[i].lexeme == "{" || toks[i].lexeme == "(")) {
             int paren = 0;
             int brace = 0;
@@ -258,11 +260,13 @@ bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vecto
     }
 }
 
-} // namespace
+} // пространство имен
 
 void NamingRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
-    // #define constants
+    const auto severity = configuredSeverity(config, id());
+
+    // Константы через #define
     for (std::size_t i = 0; i < file.lines.size(); ++i) {
         auto t = ltrimCopy(file.lines[i]);
         if (t.rfind("#define", 0) != 0) {
@@ -276,7 +280,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
             continue;
         }
         if (!matchesStyle(name, config.constantNaming)) {
-            result.addIssue(Issue{Severity::Warning,
+            result.addIssue(Issue{severity,
                 file.path,
                 static_cast<int>(i + 1),
                 1,
@@ -286,7 +290,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
         }
     }
 
-    // Functions (global scope) and variable declarations (best-effort)
+    // Функции на глобальном уровне и объявления переменных (эвристически).
     int braceDepth = 0;
 
     for (std::size_t i = 0; i < file.tokens.size(); ++i) {
@@ -297,9 +301,9 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
             braceDepth = std::max(0, braceDepth - 1);
         }
 
-        // Function name: identifier before '(' whose next non-trivia after matching ')' is '{'
+        // Имя функции: идентификатор перед '(', после парной ')' должен идти '{'.
         if (braceDepth == 0 && tok.lexeme == "(" && i > 0) {
-            // find name token before '('
+            // Находим токен имени перед '('.
             std::size_t nameIdx = i;
             while (nameIdx > 0) {
                 --nameIdx;
@@ -310,7 +314,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
                     continue;
                 }
                 if (file.tokens[nameIdx].kind == TokenKind::Keyword) {
-                    nameIdx = i; // invalid
+                    nameIdx = i; // некорректный кандидат
                     break;
                 }
             }
@@ -318,7 +322,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
                 continue;
             }
 
-            // Skip control keywords: if/for/while/switch/catch
+            // Пропускаем управляющие ключевые слова: if/for/while/switch/catch.
             if (nameIdx > 0 && file.tokens[nameIdx - 1].kind == TokenKind::Keyword) {
                 auto prev = file.tokens[nameIdx - 1].lexeme;
                 if (prev == "if" || prev == "for" || prev == "while" || prev == "switch" || prev == "catch") {
@@ -326,7 +330,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
                 }
             }
 
-            // Find matching ')'
+            // Находим парную ')'.
             int paren = 1;
             std::size_t j = i + 1;
             for (; j < file.tokens.size(); ++j) {
@@ -343,7 +347,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
                 continue;
             }
 
-            // Next token after ')' skipping qualifiers like const/noexcept
+            // Следующий токен после ')' с пропуском квалификаторов вроде const/noexcept.
             std::size_t k = j + 1;
             while (k < file.tokens.size()) {
                 auto lx = file.tokens[k].lexeme;
@@ -356,7 +360,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
             if (k < file.tokens.size() && file.tokens[k].lexeme == "{") {
                 const auto& fn = file.tokens[nameIdx];
                 if (!matchesStyle(fn.lexeme, config.functionNaming)) {
-                    result.addIssue(Issue{Severity::Warning,
+                    result.addIssue(Issue{severity,
                         file.path,
                         fn.line,
                         fn.column,
@@ -367,7 +371,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
             }
         }
 
-        // Variable declarations: scan at statement starts (rough)
+        // Объявления переменных: грубое сканирование в начале statement.
         if (tok.lexeme == ";" || tok.lexeme == "{" || tok.lexeme == "}") {
             std::size_t start = i + 1;
             if (start >= file.tokens.size()) {
@@ -378,7 +382,7 @@ void NamingRule::apply(const FileContext& file, const Config& config, AnalysisRe
                 for (const auto& [nameTok, isConst] : vars) {
                     NamingStyle style = isConst ? config.constantNaming : config.variableNaming;
                     if (!matchesStyle(nameTok.lexeme, style)) {
-                        result.addIssue(Issue{Severity::Warning,
+                        result.addIssue(Issue{severity,
                             file.path,
                             nameTok.line,
                             nameTok.column,

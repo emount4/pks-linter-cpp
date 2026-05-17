@@ -43,9 +43,9 @@ TEST_CASE("Reporter prints summary counts")
     Reporter::print(result, out);
     auto text = out.str();
 
-    REQUIRE(text.find("Files checked: 5") != std::string::npos);
-    REQUIRE(text.find("Errors: 1") != std::string::npos);
-    REQUIRE(text.find("Warnings: 1") != std::string::npos);
+    REQUIRE(text.find("проверено файлов: 5") != std::string::npos);
+    REQUIRE(text.find("ошибок: 1") != std::string::npos);
+    REQUIRE(text.find("предупреждений: 1") != std::string::npos);
 }
 
 TEST_CASE("ReporterObserver emits the final report on analysis finished")
@@ -59,6 +59,6 @@ TEST_CASE("ReporterObserver emits the final report on analysis finished")
     observer.onAnalysisFinished(result);
 
     auto text = out.str();
-    REQUIRE(text.find("[WARNING] x.cpp:4:2") != std::string::npos);
-    REQUIRE(text.find("Files checked: 1") != std::string::npos);
+    REQUIRE(text.find("x.cpp:4:2: предупреждение") != std::string::npos);
+    REQUIRE(text.find("проверено файлов: 1") != std::string::npos);
 }

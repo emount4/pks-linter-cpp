@@ -22,6 +22,6 @@ int main()
     engine.addObserver(&observer);
 
     auto result = engine.analyzeProject(scenarioRepoRoot() / "sample_project", ConfigManager::instance().get());
-    std::cout << "Scenario completed with " << result.issues.size() << " issues\n";
+    std::cout << "Сценарий завершен, нарушений: " << result.issues.size() << '\n';
     return result.errorCount() > 0 ? 0 : 1;
 }

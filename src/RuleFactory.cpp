@@ -9,9 +9,13 @@
 #include "rules/SpacingRule.h"
 #include "rules/UseBeforeInitRule.h"
 
+#include <cctype>
+#include <iostream>
+#include <unordered_set>
+
 namespace {
 
-constexpr const char* kStyleIndent = "STYLE-INDENT";
+constexpr const char* kStyleIndent = "STYLE-INDENTATION";
 constexpr const char* kStyleSpacing = "STYLE-SPACING";
 constexpr const char* kStyleLineLength = "STYLE-LINE-LENGTH";
 constexpr const char* kStyleNaming = "STYLE-NAMING";
@@ -20,7 +24,7 @@ constexpr const char* kBugMemoryLeak = "BUG-MEMORY-LEAK";
 
 std::string normalizeRuleId(std::string id)
 {
-    // trim spaces
+    // Убираем пробелы по краям.
     while (!id.empty() && (id.front() == ' ' || id.front() == '\t')) {
         id.erase(id.begin());
     }
@@ -28,29 +32,32 @@ std::string normalizeRuleId(std::string id)
         id.pop_back();
     }
 
-    // Allow both canonical ids and short aliases (as in the report).
-    if (id == "indentation") {
+    std::string lowered = id;
+    for (auto& c : lowered) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    if (lowered == "style-indent" || lowered == "style-indentation" || lowered == "indentation") {
         return kStyleIndent;
     }
-    if (id == "spacing") {
+    if (lowered == "style-spacing" || lowered == "spacing") {
         return kStyleSpacing;
     }
-    if (id == "line-length" || id == "line_length" || id == "lineLength") {
+    if (lowered == "style-line-length" || lowered == "line-length" || lowered == "line_length" || lowered == "linelength") {
         return kStyleLineLength;
     }
-    if (id == "naming") {
+    if (lowered == "style-naming" || lowered == "naming") {
         return kStyleNaming;
     }
-    if (id == "use-before-init" || id == "use_before_init" || id == "useBeforeInit") {
+    if (lowered == "bug-use-before-init" || lowered == "use-before-init" || lowered == "use_before_init" || lowered == "usebeforeinit") {
         return kBugUseBeforeInit;
     }
-    if (id == "memory-leak" || id == "memory_leak" || id == "memoryLeak") {
+    if (lowered == "bug-memory-leak" || lowered == "memory-leak" || lowered == "memory_leak" || lowered == "memoryleak") {
         return kBugMemoryLeak;
     }
     return id;
 }
 
-} // namespace
+} 
 
 std::unique_ptr<Rule> RuleFactory::createById(const std::string& ruleId)
 {
@@ -115,6 +122,10 @@ std::vector<std::string> RuleFactory::enabledRuleIdsFromFlags(const Config& conf
 std::vector<std::unique_ptr<Rule>> RuleFactory::createFromConfig(const Config& config) const
 {
     std::vector<std::unique_ptr<Rule>> out;
+    std::unordered_set<std::string> disabled;
+    for (auto id : config.disabledRuleIds) {
+        disabled.insert(normalizeRuleId(std::move(id)));
+    }
 
     std::vector<std::string> idsToCreate;
     if (!config.enabledRules.empty()) {
@@ -125,11 +136,13 @@ std::vector<std::unique_ptr<Rule>> RuleFactory::createFromConfig(const Config& c
 
     for (auto id : idsToCreate) {
         id = normalizeRuleId(std::move(id));
-        if (config.disabledRuleIds.find(id) != config.disabledRuleIds.end()) {
+        if (disabled.find(id) != disabled.end()) {
             continue;
         }
         if (auto r = createById(id)) {
             out.push_back(std::move(r));
+        } else {
+            std::cerr << "[ПРЕДУПРЕЖДЕНИЕ] Неизвестное правило проигнорировано: " << id << '\n';
         }
     }
 

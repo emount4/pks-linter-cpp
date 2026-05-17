@@ -24,32 +24,65 @@ std::vector<std::string> splitLines(const std::string& content)
         }
         lines.push_back(line);
     }
-    // If file ends with trailing newline, std::getline will not add empty last line.
-    // That's fine for our checks.
+    if (content.empty()) {
+        return lines;
+    }
+    if (!content.empty() && content.back() == '\n') {
+        return lines;
+    }
     return lines;
 }
 
-} // namespace
+} // пространство имен
 
 void AnalyzerEngine::addObserver(IObserver* obs)
 {
     observers_.push_back(obs);
 }
 
+void AnalyzerEngine::notifyFileStart(const std::string& path) const
+{
+    for (auto* obs : observers_) {
+        if (obs) {
+            obs->onFileStart(path);
+        }
+    }
+}
+
+void AnalyzerEngine::notifyIssue(const Issue& issue) const
+{
+    IssueEvent event;
+    event.filePath = issue.file.generic_string();
+    event.issue = issue;
+    for (auto* obs : observers_) {
+        if (obs) {
+            obs->onIssue(event);
+        }
+    }
+}
+
+void AnalyzerEngine::notifyFileEnd(const std::string& path) const
+{
+    for (auto* obs : observers_) {
+        if (obs) {
+            obs->onFileEnd(path);
+        }
+    }
+}
+
+void AnalyzerEngine::notifyAnalysisFinished(const AnalysisResult& result) const
+{
+    for (auto* obs : observers_) {
+        if (obs) {
+            obs->onAnalysisFinished(result);
+        }
+    }
+}
+
 AnalysisResult AnalyzerEngine::analyzeProject(const std::filesystem::path& root, const Config& config) const
 {
     AnalysisResult result;
-    result.setIssueCallback([this](const Issue& issue) {
-        IssueEvent event;
-        event.filePath = issue.file.generic_string();
-        event.issue = issue;
-
-        for (auto* obs : observers_) {
-            if (obs) {
-                obs->onIssue(event);
-            }
-        }
-    });
+    result.setIssueCallback([this](const Issue& issue) { notifyIssue(issue); });
 
     RuleFactory factory;
     const auto rules = factory.createFromConfig(config);
@@ -57,75 +90,54 @@ AnalysisResult AnalyzerEngine::analyzeProject(const std::filesystem::path& root,
     FileScanner::ScanOptions scanOptions;
     scanOptions.extensions = config.extensions;
     scanOptions.excludedDirs = config.excludedDirs;
+    scanOptions.excludedFiles = config.excludedFiles;
+    std::vector<std::string> scanWarnings;
+    scanOptions.warnings = &scanWarnings;
 
     const auto files = FileScanner::scan(root, scanOptions);
     result.filesChecked = files.size();
 
-    Tokenizer tokenizer;
+    for (const auto& warning : scanWarnings) {
+        ++result.skippedFiles;
+        result.addIssue(Issue{Severity::Warning, root, 0, 0, "CORE-FILE-SCANNER", warning,
+            "Проверьте путь проекта, права доступа или правила исключения."});
+    }
 
+    Tokenizer tokenizer;
     for (const auto& filePath : files) {
-        const auto filePathStr = filePath.generic_string();
-        for (auto* obs : observers_) {
-            if (obs) {
-                obs->onFileStart(filePathStr);
-            }
-        }
+        const auto filePathStr = filePath.lexically_normal().generic_string();
+        notifyFileStart(filePathStr);
 
         std::ifstream in(filePath, std::ios::binary);
         if (!in) {
-            result.addIssue(Issue{Severity::Warning,
-                filePath,
-                0,
-                0,
-                "CORE-IO",
+            ++result.failedFiles;
+            result.addIssue(Issue{Severity::Warning, filePath, 0, 0, "CORE-IO",
                 "Не удалось прочитать файл.",
-                "Проверьте права доступа и кодировку файла (ожидается UTF-8)."});
-
-            for (auto* obs : observers_) {
-                if (obs) {
-                    obs->onFileEnd(filePathStr);
-                }
-            }
+                "Проверьте права доступа к файлу и кодировку."});
+            notifyFileEnd(filePathStr);
             continue;
         }
 
         std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-        auto lines = splitLines(content);
-
         auto tokenRes = tokenizer.tokenize(content);
         for (const auto& w : tokenRes.warnings) {
-            result.addIssue(Issue{Severity::Warning,
-                filePath,
-                w.line,
-                w.column,
-                "CORE-TOKENIZER",
-                w.message,
-                "Упростите конструкцию или проверьте корректность литералов/комментариев."});
+            result.addIssue(Issue{Severity::Warning, filePath, w.line, w.column, "CORE-TOKENIZER", w.message,
+                "Упростите конструкцию или проверьте корректность литералов и комментариев."});
         }
 
         FileContext ctx;
-        ctx.path = filePath;
-        ctx.lines = std::move(lines);
+        ctx.path = filePath.lexically_normal();
+        ctx.lines = splitLines(content);
         ctx.tokens = std::move(tokenRes.tokens);
 
         for (const auto& rule : rules) {
             rule->apply(ctx, config, result);
         }
 
-        for (auto* obs : observers_) {
-            if (obs) {
-                obs->onFileEnd(filePathStr);
-            }
-        }
+        notifyFileEnd(filePathStr);
     }
 
-    for (auto* obs : observers_) {
-        if (obs) {
-            obs->onAnalysisFinished(result);
-        }
-    }
-
+    notifyAnalysisFinished(result);
     result.setIssueCallback({});
-
     return result;
 }

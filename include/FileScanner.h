@@ -9,6 +9,8 @@ public:
     struct ScanOptions {
         std::vector<std::string> extensions;
         std::vector<std::string> excludedDirs;
+        std::vector<std::string> excludedFiles;
+        std::vector<std::string>* warnings{nullptr};
     };
 
     static std::vector<std::filesystem::path> scan(const std::filesystem::path& root, const ScanOptions& options);

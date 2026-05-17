@@ -13,7 +13,7 @@ class ConsoleObserver final : public IObserver {
 public:
     void onIssue(const IssueEvent& event) override
     {
-        std::cout << "ISSUE " << event.filePath << " " << event.issue.ruleId << '\n';
+        std::cout << "НАРУШЕНИЕ " << event.filePath << " " << event.issue.ruleId << '\n';
     }
 
     void onFileStart(const std::string& path) override
@@ -39,6 +39,6 @@ int main()
     engine.addObserver(&observer);
 
     auto result = engine.analyzeProject(scenarioRepoRoot() / "sample_project", ConfigManager::instance().get());
-    std::cout << "Finished: " << result.filesChecked << " files\n";
+    std::cout << "Завершено: проверено файлов " << result.filesChecked << '\n';
     return 0;
 }

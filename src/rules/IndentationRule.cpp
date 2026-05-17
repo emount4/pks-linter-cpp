@@ -1,6 +1,6 @@
 #include "rules/IndentationRule.h"
 
-#include <cctype>
+#include "SeverityUtil.h"
 
 namespace {
 
@@ -14,13 +14,15 @@ bool isBlank(const std::string& s)
     return true;
 }
 
-} // namespace
+} 
 
 void IndentationRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     if (config.indentSize <= 0) {
         return;
     }
+
+    const auto severity = configuredSeverity(config, id());
 
     for (std::size_t i = 0; i < file.lines.size(); ++i) {
         const auto& line = file.lines[i];
@@ -32,50 +34,36 @@ void IndentationRule::apply(const FileContext& file, const Config& config, Analy
 
         int spaces = 0;
         int tabs = 0;
-        int pos = 0;
-        while (pos < static_cast<int>(line.size())) {
-            char c = line[static_cast<std::size_t>(pos)];
+        std::size_t pos = 0;
+        while (pos < line.size()) {
+            const char c = line[pos];
             if (c == ' ') {
                 ++spaces;
                 ++pos;
-                continue;
-            }
-            if (c == '\t') {
+            } else if (c == '\t') {
                 ++tabs;
                 ++pos;
-                continue;
+            } else {
+                break;
             }
-            break;
         }
 
         if (!config.allowTabs && tabs > 0) {
-            result.addIssue(Issue{Severity::Warning,
-                file.path,
-                lineNo,
-                1,
-                id(),
-                "Используется табуляция в отступах.",
-                "Замените табуляцию на пробелы."});
+            result.addIssue(Issue{severity, file.path, lineNo, 1, id(),
+                "В отступе используется символ табуляции.",
+                "Замените табуляцию пробелами или включите allow_tabs."});
         }
 
         if (tabs > 0 && spaces > 0) {
-            result.addIssue(Issue{Severity::Warning,
-                file.path,
-                lineNo,
-                1,
-                id(),
-                "Смешаны пробелы и табуляция в отступах.",
-                "Используйте один тип отступов (рекомендуется пробелы)."});
+            result.addIssue(Issue{severity, file.path, lineNo, 1, id(),
+                "В отступе смешаны пробелы и табуляция.",
+                "Используйте один стиль отступов во всем файле."});
         }
 
         if (tabs == 0 && spaces > 0 && (spaces % config.indentSize) != 0) {
-            result.addIssue(Issue{Severity::Warning,
-                file.path,
-                lineNo,
-                1,
-                id(),
-                "Отступ не кратен размеру indent_size (" + std::to_string(config.indentSize) + ").",
-                "Выровняйте отступы по кратности indent_size."});
+            result.addIssue(Issue{severity, file.path, lineNo, 1, id(),
+                "Отступ не кратен настроенному indent_size (" + std::to_string(config.indentSize) + ").",
+                "Выровняйте отступ по значению indent_size из конфигурации."});
         }
     }
 }

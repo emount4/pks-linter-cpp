@@ -42,13 +42,13 @@ TEST_CASE("Tokenizer recognizes string and char literals")
 TEST_CASE("Tokenizer skips line and block comments")
 {
     Tokenizer tokenizer;
-    auto result = tokenizer.tokenize("int a = 1; // comment\n/* block */ int b = 2;");
+    auto result = tokenizer.tokenize("int a = 1; // комментарий\n/* блок */ int b = 2;");
 
     REQUIRE(result.warnings.empty());
     REQUIRE(result.tokens.size() > 0);
     for (const auto& token : result.tokens) {
-        REQUIRE(token.lexeme != "comment");
-        REQUIRE(token.lexeme != "block");
+        REQUIRE(token.lexeme != "комментарий");
+        REQUIRE(token.lexeme != "блок");
     }
 }
 
@@ -59,17 +59,18 @@ TEST_CASE("Tokenizer warns on unclosed string literal")
 
     REQUIRE(result.tokens.size() > 0);
     REQUIRE(result.warnings.size() == 1);
-    REQUIRE(result.warnings[0].message == "Unclosed string literal");
+    REQUIRE(result.warnings[0].message == "Незакрытый строковый литерал");
 }
 
 TEST_CASE("Tokenizer warns on unclosed block comment")
 {
     Tokenizer tokenizer;
-    auto result = tokenizer.tokenize("/* broken comment");
+    auto result = tokenizer.tokenize("/* незакрытый комментарий");
 
-    REQUIRE(result.tokens.empty());
+    REQUIRE(result.tokens.size() == 1);
+    REQUIRE(result.tokens[0].kind == TokenKind::Comment);
     REQUIRE(result.warnings.size() == 1);
-    REQUIRE(result.warnings[0].message == "Unclosed block comment");
+    REQUIRE(result.warnings[0].message == "Незакрытый блочный комментарий");
 }
 
 TEST_CASE("Tokenizer records operator and punctuation tokens with positions")

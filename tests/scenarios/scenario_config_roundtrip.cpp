@@ -28,6 +28,6 @@ int main()
     }
 
     std::cout << "Config roundtrip OK\n";
-    std::cout << "Enabled rules: " << roundtrip.config.enabledRules.size() << '\n';
+    std::cout << "Включенных правил: " << roundtrip.config.enabledRules.size() << '\n';
     return 0;
 }
