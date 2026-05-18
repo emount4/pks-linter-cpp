@@ -3,6 +3,7 @@
 #include "ConfigManager.h"
 #include "test_support.h"
 
+// Проверяет основные операции одиночки конфигурации.
 TEST_CASE("ConfigManager can load save set get and reset config")
 {
     auto& manager = ConfigManager::instance();

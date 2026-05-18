@@ -181,6 +181,8 @@ ctest --test-dir build --output-on-failure -C Release
 .\build\cpp_linter.exe --project .\sample_project --config .\config.example.ini --save-config .\saved.ini
 ```
 
+Если в `--save-config` указать существующую папку, конфигурация будет сохранена в файл `config.ini` внутри этой папки.
+
 ## Формат отчета
 
 Для каждой найденной проблемы выводится строка:

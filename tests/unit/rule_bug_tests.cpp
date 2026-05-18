@@ -4,6 +4,7 @@
 #include "rules/UseBeforeInitRule.h"
 #include "test_support.h"
 
+// Проверяет, что параметры и присваивания считаются инициализацией переменной.
 TEST_CASE("UseBeforeInitRule treats parameters and assignments as initialized")
 {
     Config cfg;
@@ -20,6 +21,7 @@ TEST_CASE("UseBeforeInitRule treats parameters and assignments as initialized")
     REQUIRE(badResult.errorCount() == 1);
 }
 
+// Проверяет ошибки new/delete[] и delete без соответствующего new.
 TEST_CASE("MemoryLeakRule detects array delete mismatch and delete without new")
 {
     Config cfg;

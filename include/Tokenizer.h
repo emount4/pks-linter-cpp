@@ -34,5 +34,6 @@ struct TokenizationResult {
 
 class Tokenizer {
 public:
+    // Разбивает текст файла на токены и диагностические предупреждения.
     TokenizationResult tokenize(const std::string& input) const;
 };

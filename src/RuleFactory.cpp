@@ -22,6 +22,7 @@ constexpr const char* kStyleNaming = "STYLE-NAMING";
 constexpr const char* kBugUseBeforeInit = "BUG-USE-BEFORE-INIT";
 constexpr const char* kBugMemoryLeak = "BUG-MEMORY-LEAK";
 
+// Нормализует id правила и поддерживает короткие алиасы.
 std::string normalizeRuleId(std::string id)
 {
     // Убираем пробелы по краям.
@@ -57,8 +58,9 @@ std::string normalizeRuleId(std::string id)
     return id;
 }
 
-} 
+} // пространство имен
 
+// Создает конкретное правило по его id или алиасу.
 std::unique_ptr<Rule> RuleFactory::createById(const std::string& ruleId)
 {
     const auto id = normalizeRuleId(ruleId);
@@ -83,6 +85,7 @@ std::unique_ptr<Rule> RuleFactory::createById(const std::string& ruleId)
     return nullptr;
 }
 
+// Создает все встроенные правила в стабильном порядке.
 std::vector<std::unique_ptr<Rule>> RuleFactory::createAllRules() const
 {
     std::vector<std::unique_ptr<Rule>> rules;
@@ -95,6 +98,7 @@ std::vector<std::unique_ptr<Rule>> RuleFactory::createAllRules() const
     return rules;
 }
 
+// Формирует список включенных правил из boolean-флагов старого config.
 std::vector<std::string> RuleFactory::enabledRuleIdsFromFlags(const Config& config)
 {
     std::vector<std::string> ids;
@@ -119,6 +123,7 @@ std::vector<std::string> RuleFactory::enabledRuleIdsFromFlags(const Config& conf
     return ids;
 }
 
+// Создает набор правил по текущей конфигурации.
 std::vector<std::unique_ptr<Rule>> RuleFactory::createFromConfig(const Config& config) const
 {
     std::vector<std::unique_ptr<Rule>> out;
@@ -149,11 +154,13 @@ std::vector<std::unique_ptr<Rule>> RuleFactory::createFromConfig(const Config& c
     return out;
 }
 
+// Совместимый алиас для создания правил из config.
 std::vector<std::unique_ptr<Rule>> RuleFactory::createRules(const Config& config) const
 {
     return createFromConfig(config);
 }
 
+// Возвращает список всех поддерживаемых id правил.
 const std::vector<std::string>& RuleFactory::allRuleIds()
 {
     static const std::vector<std::string> ids = {

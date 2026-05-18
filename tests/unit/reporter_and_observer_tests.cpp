@@ -9,6 +9,7 @@
 
 #include <sstream>
 
+// Проверяет стабильную сортировку нарушений в отчете.
 TEST_CASE("Reporter sorts issues by file line and column")
 {
     AnalysisResult result;
@@ -32,6 +33,7 @@ TEST_CASE("Reporter sorts issues by file line and column")
     REQUIRE(posFirst < posSecond);
 }
 
+// Проверяет вывод итоговых счетчиков предупреждений, ошибок и общего числа нарушений.
 TEST_CASE("Reporter prints summary counts")
 {
     AnalysisResult result;
@@ -48,6 +50,7 @@ TEST_CASE("Reporter prints summary counts")
     REQUIRE(text.find("предупреждений: 1") != std::string::npos);
 }
 
+// Проверяет, что observer печатает итоговый отчет после завершения анализа.
 TEST_CASE("ReporterObserver emits the final report on analysis finished")
 {
     AnalysisResult result;

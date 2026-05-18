@@ -4,6 +4,7 @@
 
 #include <sstream>
 
+// Проверяет сообщение об отсутствии нарушений и стабильную итоговую сводку.
 TEST_CASE("Reporter prints no-issues message and stable summary")
 {
     AnalysisResult result;

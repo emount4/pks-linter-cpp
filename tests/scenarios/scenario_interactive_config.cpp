@@ -4,6 +4,11 @@
 #include <iostream>
 #include <sstream>
 
+/**
+ * Эмулирует ввод пользователя через std::istringstream и проверяет,
+ * что InteractiveConfig правильно собирает параметры: путь к проекту,
+ * режим анализа, настройки стиля, исключения и сохранение в файл.
+ */
 int main()
 {
     scenarioEnableUtf8Console();

@@ -16,6 +16,7 @@ constexpr const char* kStyleNaming = "STYLE-NAMING";
 constexpr const char* kBugUseBeforeInit = "BUG-USE-BEFORE-INIT";
 constexpr const char* kBugMemoryLeak = "BUG-MEMORY-LEAK";
 
+// Убирает пробельные символы по краям строки.
 std::string trim(std::string s)
 {
     auto isSpace = [](unsigned char ch) { return std::isspace(ch) != 0; };
@@ -28,6 +29,7 @@ std::string trim(std::string s)
     return s;
 }
 
+// Приводит строку к нижнему регистру.
 std::string lower(std::string s)
 {
     for (char& c : s) {
@@ -36,6 +38,7 @@ std::string lower(std::string s)
     return s;
 }
 
+// Приводит строку к верхнему регистру.
 std::string upper(std::string s)
 {
     for (char& c : s) {
@@ -44,6 +47,7 @@ std::string upper(std::string s)
     return s;
 }
 
+// Преобразует id или алиас правила в канонический идентификатор.
 std::string canonicalRuleId(std::string id)
 {
     id = trim(std::move(id));
@@ -69,6 +73,7 @@ std::string canonicalRuleId(std::string id)
     return upper(id);
 }
 
+// Возвращает множество всех поддерживаемых id правил.
 const std::unordered_set<std::string>& knownRules()
 {
     static const std::unordered_set<std::string> ids{
@@ -76,6 +81,7 @@ const std::unordered_set<std::string>& knownRules()
     return ids;
 }
 
+// Разбирает строковое значение как bool.
 bool parseBool(const std::string& v, bool* out)
 {
     const auto s = lower(trim(v));
@@ -90,6 +96,7 @@ bool parseBool(const std::string& v, bool* out)
     return false;
 }
 
+// Безопасно разбирает число или возвращает значение по умолчанию.
 int parseIntOrDefault(const std::string& value, int fallback, int minValue, const std::string& key,
     std::vector<std::string>& diagnostics)
 {
@@ -107,6 +114,7 @@ int parseIntOrDefault(const std::string& value, int fallback, int minValue, cons
     }
 }
 
+// Преобразует строку из config в стиль именования.
 NamingStyle parseNamingStyle(const std::string& v)
 {
     const auto s = lower(trim(v));
@@ -126,6 +134,7 @@ NamingStyle parseNamingStyle(const std::string& v)
     return NamingStyle::Any;
 }
 
+// Преобразует стиль именования обратно в строку config.
 std::string namingStyleToConfig(NamingStyle style)
 {
     switch (style) {
@@ -143,6 +152,7 @@ std::string namingStyleToConfig(NamingStyle style)
     return "any";
 }
 
+// Разбивает строку со значениями через запятую.
 std::vector<std::string> splitCommaList(const std::string& v)
 {
     std::vector<std::string> parts;
@@ -157,6 +167,7 @@ std::vector<std::string> splitCommaList(const std::string& v)
     return parts;
 }
 
+// Разбирает список правил, нормализует id и отбрасывает неизвестные.
 std::vector<std::string> normalizeRuleList(const std::string& value, std::vector<std::string>& diagnostics)
 {
     std::vector<std::string> out;
@@ -171,6 +182,7 @@ std::vector<std::string> normalizeRuleList(const std::string& value, std::vector
     return out;
 }
 
+// Склеивает список строк через запятую.
 std::string join(const std::vector<std::string>& values)
 {
     std::ostringstream out;
@@ -183,6 +195,7 @@ std::string join(const std::vector<std::string>& values)
     return out.str();
 }
 
+// Преобразует режим анализа в строку config.
 std::string modeToString(AnalysisMode mode)
 {
     return mode == AnalysisMode::Style ? "style" : "full";
@@ -190,6 +203,7 @@ std::string modeToString(AnalysisMode mode)
 
 } // пространство имен
 
+// Загружает конфигурацию из INI-файла с устойчивой обработкой ошибок.
 ConfigLoadResult ConfigLoader::loadFromFile(const std::filesystem::path& path)
 {
     ConfigLoadResult res;
@@ -309,12 +323,24 @@ ConfigLoadResult ConfigLoader::loadFromFile(const std::filesystem::path& path)
     return res;
 }
 
+// Возвращает путь для записи config: если указана папка, добавляет имя файла.
+std::filesystem::path configOutputPath(const std::filesystem::path& path)
+{
+    std::error_code ec;
+    if (std::filesystem::is_directory(path, ec)) {
+        return path / "config.ini";
+    }
+    return path;
+}
+
+// Сохраняет конфигурацию в INI-файл.
 bool ConfigLoader::saveToFile(const Config& config, const std::filesystem::path& path, std::string* error)
 {
-    std::ofstream out(path);
+    const auto outputPath = configOutputPath(path);
+    std::ofstream out(outputPath);
     if (!out) {
         if (error) {
-            *error = "Не удалось записать файл конфигурации: " + path.string();
+            *error = "Не удалось записать файл конфигурации: " + outputPath.string();
         }
         return false;
     }

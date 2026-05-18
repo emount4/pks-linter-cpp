@@ -10,7 +10,9 @@
 
 #include <filesystem>
 #include <iostream>
+#include <system_error>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #ifdef _WIN32
@@ -36,22 +38,49 @@ struct CliOptions {
     AnalysisMode mode{AnalysisMode::Full};
 };
 
+// Преобразует введенный пользователем путь в std::filesystem::path.
 std::filesystem::path pathFromUserInput(const std::string& s)
 {
 #ifdef _WIN32
     if (s.empty()) {
         return {};
     }
-    int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, nullptr, 0);
-    if (wlen > 0) {
+
+    std::filesystem::path fallback;
+    std::unordered_set<unsigned int> seen;
+    const unsigned int codePages[] = {CP_UTF8, GetACP(), GetOEMCP()};
+    for (const auto codePage : codePages) {
+        if (!seen.insert(codePage).second) {
+            continue;
+        }
+        const auto flags = codePage == CP_UTF8 ? MB_ERR_INVALID_CHARS : 0;
+        int wlen = MultiByteToWideChar(codePage, flags, s.c_str(), -1, nullptr, 0);
+        if (wlen <= 0) {
+            continue;
+        }
+
         std::wstring ws(static_cast<std::size_t>(wlen - 1), L'\0');
-        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, ws.data(), wlen);
-        return std::filesystem::path(ws);
+        MultiByteToWideChar(codePage, flags, s.c_str(), -1, ws.data(), wlen);
+        std::filesystem::path candidate(ws);
+        if (fallback.empty()) {
+            fallback = candidate;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(candidate, ec) ||
+            (!candidate.parent_path().empty() && std::filesystem::exists(candidate.parent_path(), ec))) {
+            return candidate;
+        }
+    }
+
+    if (!fallback.empty()) {
+        return fallback;
     }
 #endif
     return std::filesystem::path(s);
 }
 
+// Нормализует id правила через фабрику, если правило известно.
 std::string canonicalRuleId(const std::string& id)
 {
     if (auto rule = RuleFactory::createById(id)) {
@@ -60,6 +89,7 @@ std::string canonicalRuleId(const std::string& id)
     return id;
 }
 
+// Возвращает набор правил, соответствующий выбранному режиму.
 std::vector<std::string> rulesForMode(AnalysisMode mode)
 {
     if (mode == AnalysisMode::Style) {
@@ -69,6 +99,7 @@ std::vector<std::string> rulesForMode(AnalysisMode mode)
         "BUG-USE-BEFORE-INIT", "BUG-MEMORY-LEAK"};
 }
 
+// Применяет режим к конфигурации и формирует список правил.
 void applyMode(Config& config, bool force)
 {
     if (force || config.enabledRules.empty()) {
@@ -76,6 +107,7 @@ void applyMode(Config& config, bool force)
     }
 }
 
+// Печатает справку по параметрам командной строки.
 void printHelp(std::ostream& os)
 {
     os << "cpp_linter - учебный статический анализатор для подмножества C++\n\n";
@@ -99,6 +131,7 @@ void printHelp(std::ostream& os)
     os << "  cpp_linter --project .\\sample_project --disable STYLE-SPACING\n";
 }
 
+// Разбирает аргументы командной строки в структуру настроек CLI.
 CliOptions parseArgs(int argc, char** argv)
 {
     CliOptions opt;
@@ -143,6 +176,7 @@ CliOptions parseArgs(int argc, char** argv)
 
 } // пространство имен
 
+// Точка входа: собирает конфигурацию, запускает анализ и печатает отчет.
 int main(int argc, char** argv)
 {
 #ifdef _WIN32

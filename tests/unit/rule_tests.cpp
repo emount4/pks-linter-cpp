@@ -10,6 +10,7 @@
 #include "rules/UseBeforeInitRule.h"
 #include "test_support.h"
 
+// Проверяет поиск табуляции и некратных отступов.
 TEST_CASE("IndentationRule flags tabs and indentation size mismatches")
 {
     auto ctx = makeFileContextFromText("indent.cpp",
@@ -30,6 +31,7 @@ TEST_CASE("IndentationRule flags tabs and indentation size mismatches")
     REQUIRE(result.issues[0].ruleId == "STYLE-INDENTATION");
 }
 
+// Проверяет, что правило длины строки срабатывает только при превышении лимита.
 TEST_CASE("LineLengthRule flags only lines longer than the configured maximum")
 {
     auto ctx = makeFileContextFromText("length.cpp",
@@ -48,6 +50,7 @@ TEST_CASE("LineLengthRule flags only lines longer than the configured maximum")
     REQUIRE(result.issues[0].column == 11);
 }
 
+// Проверяет отсутствие пробелов вокруг операторов и после запятых.
 TEST_CASE("SpacingRule flags missing spaces around operators and commas")
 {
     auto ctx = makeFileContextFromText("spacing.cpp",
@@ -64,6 +67,7 @@ TEST_CASE("SpacingRule flags missing spaces around operators and commas")
     }
 }
 
+// Проверяет нарушения именования констант, функций и переменных.
 TEST_CASE("NamingRule flags constant, function and variable naming violations")
 {
     auto ctx = makeFileContextFromText("naming.cpp",
@@ -84,6 +88,7 @@ TEST_CASE("NamingRule flags constant, function and variable naming violations")
     REQUIRE(result.issues[0].ruleId == "STYLE-NAMING");
 }
 
+// Проверяет обнаружение чтения переменной до инициализации.
 TEST_CASE("UseBeforeInitRule flags reads before initialization")
 {
     auto ctx = makeFileContextFromText("use_before.cpp",
@@ -98,6 +103,7 @@ TEST_CASE("UseBeforeInitRule flags reads before initialization")
     REQUIRE(result.issues[0].ruleId == "BUG-USE-BEFORE-INIT");
 }
 
+// Проверяет, что инициализированные переменные не дают ложных срабатываний.
 TEST_CASE("UseBeforeInitRule does not flag initialized variables")
 {
     auto ctx = makeFileContextFromText("use_before_ok.cpp",
@@ -111,6 +117,7 @@ TEST_CASE("UseBeforeInitRule does not flag initialized variables")
     REQUIRE(result.issues.empty());
 }
 
+// Проверяет поиск new без delete и корректную пару new/delete.
 TEST_CASE("MemoryLeakRule flags allocations without delete and accepts matched delete")
 {
     auto leakCtx = makeFileContextFromText("leak.cpp",

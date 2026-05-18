@@ -5,6 +5,7 @@
 #include "test_support.h"
 #include "scenario_helpers.h"
 
+// Проверяет анализ проекта с явно выбранным набором правил.
 TEST_CASE("AnalyzerEngine analyzes a project with selected rules only")
 {
     auto root = makeTempDir("engine_selected_rules");
@@ -23,6 +24,7 @@ TEST_CASE("AnalyzerEngine analyzes a project with selected rules only")
     REQUIRE(result.warningCount() == 3);
 }
 
+// Проверяет, что движок находит нарушения пробелов при включенном правиле.
 TEST_CASE("AnalyzerEngine reports spacing issues when spacing rule is enabled")
 {
     auto root = makeTempDir("engine_spacing");
@@ -38,6 +40,7 @@ TEST_CASE("AnalyzerEngine reports spacing issues when spacing rule is enabled")
     REQUIRE(result.warningCount() == 4);
 }
 
+// Проверяет, что движок находит ошибки использования до инициализации.
 TEST_CASE("AnalyzerEngine reports use-before-init errors")
 {
     auto root = makeTempDir("engine_use_before");
@@ -54,6 +57,7 @@ TEST_CASE("AnalyzerEngine reports use-before-init errors")
     REQUIRE(result.warningCount() == 0);
 }
 
+// Проверяет события observer: начало файла, нарушение, конец файла и завершение анализа.
 TEST_CASE("AnalyzerEngine notifies observers about files and issues")
 {
     auto root = makeTempDir("engine_observer");
@@ -76,6 +80,7 @@ TEST_CASE("AnalyzerEngine notifies observers about files and issues")
     REQUIRE(observer.finishedCount == 1);
 }
 
+// Проверяет, что отключенные правила не применяются движком анализа.
 TEST_CASE("AnalyzerEngine respects disabled rules")
 {
     auto root = makeTempDir("engine_disabled");

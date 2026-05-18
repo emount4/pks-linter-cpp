@@ -4,6 +4,7 @@
 
 namespace {
 
+// Проверяет, состоит ли строка только из пробельных символов.
 bool isBlank(const std::string& s)
 {
     for (char c : s) {
@@ -14,8 +15,9 @@ bool isBlank(const std::string& s)
     return true;
 }
 
-} 
+} // пространство имен
 
+// Ищет строки, которые длиннее лимита из конфигурации.
 void LineLengthRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     const int maxLen = config.maxLineLength;

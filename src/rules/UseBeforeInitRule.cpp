@@ -17,12 +17,14 @@ struct FunctionDef {
     std::size_t bodyEnd{0};
 };
 
+// Проверяет, является ли токен управляющим ключевым словом, а не именем функции.
 bool isControlKeyword(const Token& t)
 {
     return t.kind == TokenKind::Keyword &&
         (t.lexeme == "if" || t.lexeme == "for" || t.lexeme == "while" || t.lexeme == "switch" || t.lexeme == "catch");
 }
 
+// Находит простые функции и границы их параметров и тела.
 std::vector<FunctionDef> findFunctions(const std::vector<Token>& toks)
 {
     std::vector<FunctionDef> out;
@@ -106,12 +108,14 @@ std::vector<FunctionDef> findFunctions(const std::vector<Token>& toks)
     return out;
 }
 
+// Проверяет квалификаторы, которые могут идти перед типом.
 bool isQualifier(const Token& t)
 {
     return t.kind == TokenKind::Keyword && (t.lexeme == "const" || t.lexeme == "constexpr" || t.lexeme == "static" ||
         t.lexeme == "volatile" || t.lexeme == "mutable");
 }
 
+// Эвристически определяет, является ли токен типом.
 bool isTypeToken(const Token& t)
 {
     if (t.kind == TokenKind::Keyword) {
@@ -123,6 +127,7 @@ bool isTypeToken(const Token& t)
         std::isupper(static_cast<unsigned char>(t.lexeme.front())) != 0;
 }
 
+// Проверяет, что идентификатор не является доступом к члену или области видимости.
 bool isMemberOrScopeAccess(const std::vector<Token>& toks, std::size_t idx)
 {
     if (idx == 0) {
@@ -136,6 +141,7 @@ struct VarInfo {
     bool initialized{false};
 };
 
+// Ищет переменную в стеке текущих областей видимости.
 VarInfo* lookupVar(std::vector<std::unordered_map<std::string, VarInfo>>& scopes, const std::string& name)
 {
     for (std::size_t i = scopes.size(); i-- > 0;) {
@@ -147,6 +153,7 @@ VarInfo* lookupVar(std::vector<std::unordered_map<std::string, VarInfo>>& scopes
     return nullptr;
 }
 
+// Добавляет нарушение, если токен читает неинициализированную переменную.
 void reportUseIfNeeded(const FileContext& file, const Config& config, AnalysisResult& result,
     std::vector<std::unordered_map<std::string, VarInfo>>& scopes, const Token& tok)
 {
@@ -160,6 +167,7 @@ void reportUseIfNeeded(const FileContext& file, const Config& config, AnalysisRe
         "Инициализируйте переменную при объявлении или присвойте значение до чтения."});
 }
 
+// Проверяет участок токенов на чтение неинициализированных переменных.
 void checkRangeForReads(const FileContext& file, const Config& config, AnalysisResult& result,
     std::vector<std::unordered_map<std::string, VarInfo>>& scopes, const std::vector<Token>& toks,
     std::size_t first, std::size_t last)
@@ -179,6 +187,7 @@ void checkRangeForReads(const FileContext& file, const Config& config, AnalysisR
     }
 }
 
+// Разбирает локальное объявление переменной и отмечает инициализацию.
 bool tryParseDeclaration(const FileContext& file, const Config& config, AnalysisResult& result,
     std::vector<std::unordered_map<std::string, VarInfo>>& scopes, std::size_t idx, std::size_t* outNext)
 {
@@ -266,6 +275,7 @@ bool tryParseDeclaration(const FileContext& file, const Config& config, Analysis
     }
 }
 
+// Извлекает имена параметров функции и считает их инициализированными.
 std::vector<Token> extractParameterNames(const std::vector<Token>& toks, std::size_t first, std::size_t last)
 {
     std::vector<Token> params;
@@ -284,6 +294,7 @@ std::vector<Token> extractParameterNames(const std::vector<Token>& toks, std::si
     return params;
 }
 
+// Проверяет, является ли токен оператором присваивания.
 bool isAssignmentOp(const Token& t)
 {
     return t.kind == TokenKind::Operator &&
@@ -293,6 +304,7 @@ bool isAssignmentOp(const Token& t)
 
 } // пространство имен
 
+// Выполняет проверку использования переменных до инициализации внутри функций.
 void UseBeforeInitRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     for (const auto& fn : findFunctions(file.tokens)) {

@@ -8,6 +8,12 @@
 #include <filesystem>
 #include <iostream>
 
+/**
+ * Запускает анализатор на тестовом проекте sample_project,
+ * выводит отчёт о нарушениях через ReporterObserver.
+ * Проверяет, что анализатор работает на реальных файлах.
+ */
+
 int main()
 {
     scenarioEnableUtf8Console();

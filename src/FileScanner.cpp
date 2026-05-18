@@ -6,6 +6,7 @@
 
 namespace {
 
+// Приводит строку к нижнему регистру для нечувствительного сравнения.
 std::string toLower(std::string s)
 {
     for (char& c : s) {
@@ -14,11 +15,13 @@ std::string toLower(std::string s)
     return s;
 }
 
+// Нормализует путь в строку с прямыми слешами и нижним регистром.
 std::string normalizedGeneric(const std::filesystem::path& path)
 {
     return toLower(path.lexically_normal().generic_string());
 }
 
+// Добавляет стандартные директории, которые не нужно анализировать.
 void addDefaultExcludes(std::unordered_set<std::string>& excluded)
 {
     for (const auto& dir : {"build", ".git", "third_party", "cmake-build-debug", "cmake-build-release"}) {
@@ -26,6 +29,7 @@ void addDefaultExcludes(std::unordered_set<std::string>& excluded)
     }
 }
 
+// Проверяет, совпадает ли путь или имя файла с одним из исключений.
 bool matchesPathOrName(const std::filesystem::path& root, const std::filesystem::path& candidate,
     const std::unordered_set<std::string>& excluded)
 {
@@ -44,8 +48,9 @@ bool matchesPathOrName(const std::filesystem::path& root, const std::filesystem:
     return !ec && excluded.find(normalizedGeneric(absolute)) != excluded.end();
 }
 
-} // пространство имен
+} 
 
+// Сканирует проект, фильтрует расширения и применяет исключения.
 std::vector<std::filesystem::path> FileScanner::scan(const std::filesystem::path& root, const ScanOptions& options)
 {
     std::vector<std::filesystem::path> files;

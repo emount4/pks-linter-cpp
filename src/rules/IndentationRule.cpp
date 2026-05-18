@@ -4,6 +4,7 @@
 
 namespace {
 
+// Проверяет, состоит ли строка только из пробелов и табуляции.
 bool isBlank(const std::string& s)
 {
     for (char c : s) {
@@ -14,8 +15,9 @@ bool isBlank(const std::string& s)
     return true;
 }
 
-} 
+} // пространство имен
 
+// Проверяет отступы каждой непустой строки файла.
 void IndentationRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     if (config.indentSize <= 0) {

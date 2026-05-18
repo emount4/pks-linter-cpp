@@ -3,6 +3,7 @@
 #include "RuleFactory.h"
 #include "Rule.h"
 
+// Проверяет поддержку канонических id правил и коротких алиасов.
 TEST_CASE("RuleFactory supports canonical ids and aliases")
 {
     REQUIRE(RuleFactory::createById("STYLE-INDENTATION") != nullptr);
@@ -14,6 +15,7 @@ TEST_CASE("RuleFactory supports canonical ids and aliases")
     REQUIRE(RuleFactory::createById("unknown-rule") == nullptr);
 }
 
+// Проверяет, что фабрика не создает отключенные правила.
 TEST_CASE("RuleFactory ignores disabled rules")
 {
     Config config;

@@ -3,11 +3,21 @@
 #include <algorithm>
 #include <cctype>
 #include <exception>
+#include <system_error>
 #include <sstream>
+#include <unordered_set>
 #include <vector>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 namespace {
 
+// Убирает пробельные символы по краям строки.
 std::string trim(std::string s)
 {
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front())) != 0) {
@@ -19,6 +29,7 @@ std::string trim(std::string s)
     return s;
 }
 
+// Приводит строку к нижнему регистру.
 std::string lower(std::string s)
 {
     for (auto& c : s) {
@@ -27,6 +38,7 @@ std::string lower(std::string s)
     return s;
 }
 
+// Разбивает строку со значениями через запятую.
 std::vector<std::string> splitComma(const std::string& s)
 {
     std::vector<std::string> out;
@@ -41,6 +53,7 @@ std::vector<std::string> splitComma(const std::string& s)
     return out;
 }
 
+// Выводит приглашение и читает одну строку ответа.
 std::string ask(std::istream& input, std::ostream& output, const std::string& prompt)
 {
     output << prompt;
@@ -49,6 +62,49 @@ std::string ask(std::istream& input, std::ostream& output, const std::string& pr
     return trim(value);
 }
 
+// Преобразует введенный текст в путь с поддержкой UTF-8 на Windows.
+std::filesystem::path pathFromInput(const std::string& value)
+{
+#ifdef _WIN32
+    if (value.empty()) {
+        return {};
+    }
+
+    std::filesystem::path fallback;
+    std::unordered_set<unsigned int> seen;
+    const unsigned int codePages[] = {CP_UTF8, GetACP(), GetOEMCP()};
+    for (const auto codePage : codePages) {
+        if (!seen.insert(codePage).second) {
+            continue;
+        }
+        const auto flags = codePage == CP_UTF8 ? MB_ERR_INVALID_CHARS : 0;
+        int wlen = MultiByteToWideChar(codePage, flags, value.c_str(), -1, nullptr, 0);
+        if (wlen <= 0) {
+            continue;
+        }
+
+        std::wstring wide(static_cast<std::size_t>(wlen - 1), L'\0');
+        MultiByteToWideChar(codePage, flags, value.c_str(), -1, wide.data(), wlen);
+        std::filesystem::path candidate(wide);
+        if (fallback.empty()) {
+            fallback = candidate;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(candidate, ec) ||
+            (!candidate.parent_path().empty() && std::filesystem::exists(candidate.parent_path(), ec))) {
+            return candidate;
+        }
+    }
+
+    if (!fallback.empty()) {
+        return fallback;
+    }
+#endif
+    return std::filesystem::path(value);
+}
+
+// Разбирает число или возвращает значение по умолчанию.
 int parseIntOrDefault(const std::string& value, int fallback, int minValue)
 {
     if (value.empty()) {
@@ -65,6 +121,7 @@ int parseIntOrDefault(const std::string& value, int fallback, int minValue)
     return fallback;
 }
 
+// Разбирает логический ответ пользователя или возвращает значение по умолчанию.
 bool parseBoolOrDefault(const std::string& value, bool fallback)
 {
     const auto v = lower(value);
@@ -80,15 +137,16 @@ bool parseBoolOrDefault(const std::string& value, bool fallback)
     return fallback;
 }
 
-} // пространство имен
+}
 
+// Проводит интерактивный опрос пользователя и возвращает выбранные настройки.
 InteractiveSessionResult InteractiveConfig::collect(std::istream& input, std::ostream& output, Config defaults)
 {
     InteractiveSessionResult result;
     result.config = std::move(defaults);
 
     output << "Интерактивный режим\n";
-    result.projectPath = ask(input, output, "Путь к проекту: ");
+    result.projectPath = pathFromInput(ask(input, output, "Путь к проекту: "));
 
     const auto mode = lower(ask(input, output, "Режим (style/full) [full]: "));
     result.config.mode = mode == "style" ? AnalysisMode::Style : AnalysisMode::Full;
@@ -115,7 +173,7 @@ InteractiveSessionResult InteractiveConfig::collect(std::istream& input, std::os
 
     const bool save = parseBoolOrDefault(ask(input, output, "Сохранить конфигурацию? (y/n) [n]: "), false);
     if (save) {
-        result.saveConfigPath = ask(input, output, "Путь для сохранения конфигурации: ");
+        result.saveConfigPath = pathFromInput(ask(input, output, "Путь для сохранения конфигурации: "));
     }
 
     return result;

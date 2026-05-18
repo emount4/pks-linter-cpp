@@ -14,12 +14,14 @@ struct FunctionDef {
     std::size_t bodyEnd{0};
 };
 
+// Проверяет, является ли токен управляющим ключевым словом, а не именем функции.
 bool isControlKeyword(const Token& t)
 {
     return t.kind == TokenKind::Keyword &&
         (t.lexeme == "if" || t.lexeme == "for" || t.lexeme == "while" || t.lexeme == "switch" || t.lexeme == "catch");
 }
 
+// Находит простые функции и границы их тел.
 std::vector<FunctionDef> findFunctions(const std::vector<Token>& toks)
 {
     std::vector<FunctionDef> out;
@@ -95,6 +97,7 @@ std::vector<FunctionDef> findFunctions(const std::vector<Token>& toks)
     return out;
 }
 
+// Проверяет, что идентификатор не является доступом к члену или области видимости.
 bool isMemberOrScopeAccess(const std::vector<Token>& toks, std::size_t idx)
 {
     if (idx == 0) {
@@ -104,6 +107,7 @@ bool isMemberOrScopeAccess(const std::vector<Token>& toks, std::size_t idx)
     return prev == "." || prev == "->" || prev == "::";
 }
 
+// Ищет переменную, которой присваивается результат new.
 std::string findAssignedVar(const std::vector<Token>& toks, std::size_t newIdx)
 {
     std::size_t i = newIdx;
@@ -132,6 +136,7 @@ struct DeleteExpr {
     bool arrayDelete{false};
 };
 
+// Разбирает выражение delete и возвращает имя указателя и тип освобождения.
 DeleteExpr parseDelete(const std::vector<Token>& toks, std::size_t deleteIdx)
 {
     DeleteExpr expr;
@@ -146,6 +151,7 @@ DeleteExpr parseDelete(const std::vector<Token>& toks, std::size_t deleteIdx)
     return expr;
 }
 
+// Проверяет, является ли выделение памяти массивным new[].
 bool isArrayNew(const std::vector<Token>& toks, std::size_t newIdx)
 {
     for (std::size_t i = newIdx + 1; i < toks.size(); ++i) {
@@ -167,6 +173,7 @@ struct Allocation {
 
 } 
 
+// Проверяет пары new/delete внутри каждой найденной функции.
 void MemoryLeakRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     const auto severity = configuredSeverity(config, id());

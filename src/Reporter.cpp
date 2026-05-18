@@ -4,6 +4,7 @@
 
 namespace {
 
+// Сравнивает нарушения для стабильной сортировки отчета.
 bool issueLess(const Issue& a, const Issue& b)
 {
     const auto af = a.file.lexically_normal().generic_string();
@@ -20,13 +21,15 @@ bool issueLess(const Issue& a, const Issue& b)
     return a.ruleId < b.ruleId;
 }
 
+// Преобразует severity во внешний русский текст.
 const char* severityText(Severity severity)
 {
     return severity == Severity::Error ? "ошибка" : "предупреждение";
 }
 
-} // пространство имен
+} 
 
+// Печатает отсортированные нарушения и итоговую сводку.
 void Reporter::print(const AnalysisResult& result, std::ostream& os)
 {
     std::vector<Issue> issues = result.issues;

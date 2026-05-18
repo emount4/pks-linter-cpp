@@ -5,6 +5,7 @@
 
 #include <algorithm>
 
+// Проверяет фильтрацию файлов по поддерживаемым расширениям.
 TEST_CASE("FileScanner returns only files with matching extensions")
 {
     auto root = makeTempDir("scanner_ext");
@@ -21,6 +22,7 @@ TEST_CASE("FileScanner returns only files with matching extensions")
     REQUIRE(files[1].filename().string() == "b.h");
 }
 
+// Проверяет исключение директорий по имени.
 TEST_CASE("FileScanner excludes directories by name")
 {
     auto root = makeTempDir("scanner_excluded");
@@ -36,6 +38,7 @@ TEST_CASE("FileScanner excludes directories by name")
     REQUIRE(files[0].filename().string() == "main.cpp");
 }
 
+// Проверяет, что расширения файлов сравниваются без учета регистра.
 TEST_CASE("FileScanner matches extensions case-insensitively")
 {
     auto root = makeTempDir("scanner_case_ext");
@@ -49,6 +52,7 @@ TEST_CASE("FileScanner matches extensions case-insensitively")
     REQUIRE(files.size() == 2);
 }
 
+// Проверяет, что имена исключаемых директорий сравниваются без учета регистра.
 TEST_CASE("FileScanner excludes directories case-insensitively")
 {
     auto root = makeTempDir("scanner_case_dir");
@@ -64,6 +68,7 @@ TEST_CASE("FileScanner excludes directories case-insensitively")
     REQUIRE(files[0].filename().string() == "keep.cpp");
 }
 
+// Проверяет стабильную сортировку найденных файлов.
 TEST_CASE("FileScanner sorts results deterministically")
 {
     auto root = makeTempDir("scanner_sort");

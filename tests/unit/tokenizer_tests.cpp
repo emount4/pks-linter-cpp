@@ -2,6 +2,7 @@
 
 #include "Tokenizer.h"
 
+// Проверяет распознавание идентификаторов, ключевых слов и чисел.
 TEST_CASE("Tokenizer recognizes identifiers, keywords and numbers")
 {
     Tokenizer tokenizer;
@@ -17,6 +18,7 @@ TEST_CASE("Tokenizer recognizes identifiers, keywords and numbers")
     REQUIRE(result.tokens[3].lexeme == "42");
 }
 
+// Проверяет распознавание строковых и символьных литералов.
 TEST_CASE("Tokenizer recognizes string and char literals")
 {
     Tokenizer tokenizer;
@@ -39,6 +41,7 @@ TEST_CASE("Tokenizer recognizes string and char literals")
     REQUIRE(foundChar);
 }
 
+// Проверяет обработку однострочных и блочных комментариев.
 TEST_CASE("Tokenizer skips line and block comments")
 {
     Tokenizer tokenizer;
@@ -52,6 +55,7 @@ TEST_CASE("Tokenizer skips line and block comments")
     }
 }
 
+// Проверяет диагностику незакрытого строкового литерала.
 TEST_CASE("Tokenizer warns on unclosed string literal")
 {
     Tokenizer tokenizer;
@@ -62,6 +66,7 @@ TEST_CASE("Tokenizer warns on unclosed string literal")
     REQUIRE(result.warnings[0].message == "Незакрытый строковый литерал");
 }
 
+// Проверяет диагностику незакрытого блочного комментария.
 TEST_CASE("Tokenizer warns on unclosed block comment")
 {
     Tokenizer tokenizer;
@@ -73,6 +78,7 @@ TEST_CASE("Tokenizer warns on unclosed block comment")
     REQUIRE(result.warnings[0].message == "Незакрытый блочный комментарий");
 }
 
+// Проверяет токены операторов, пунктуации и сохранение позиций.
 TEST_CASE("Tokenizer records operator and punctuation tokens with positions")
 {
     Tokenizer tokenizer;

@@ -13,6 +13,7 @@
 
 namespace {
 
+// Разбивает текст файла на строки без символов перевода строки.
 std::vector<std::string> splitLines(const std::string& content)
 {
     std::vector<std::string> lines;
@@ -33,13 +34,15 @@ std::vector<std::string> splitLines(const std::string& content)
     return lines;
 }
 
-} // пространство имен
+}
 
+// Подписывает observer на события анализа.
 void AnalyzerEngine::addObserver(IObserver* obs)
 {
     observers_.push_back(obs);
 }
 
+// Рассылает событие начала анализа файла.
 void AnalyzerEngine::notifyFileStart(const std::string& path) const
 {
     for (auto* obs : observers_) {
@@ -49,6 +52,7 @@ void AnalyzerEngine::notifyFileStart(const std::string& path) const
     }
 }
 
+// Рассылает событие о найденном нарушении.
 void AnalyzerEngine::notifyIssue(const Issue& issue) const
 {
     IssueEvent event;
@@ -61,6 +65,7 @@ void AnalyzerEngine::notifyIssue(const Issue& issue) const
     }
 }
 
+// Рассылает событие завершения анализа файла.
 void AnalyzerEngine::notifyFileEnd(const std::string& path) const
 {
     for (auto* obs : observers_) {
@@ -70,6 +75,7 @@ void AnalyzerEngine::notifyFileEnd(const std::string& path) const
     }
 }
 
+// Рассылает событие завершения анализа проекта.
 void AnalyzerEngine::notifyAnalysisFinished(const AnalysisResult& result) const
 {
     for (auto* obs : observers_) {
@@ -79,6 +85,7 @@ void AnalyzerEngine::notifyAnalysisFinished(const AnalysisResult& result) const
     }
 }
 
+// Выполняет полный цикл анализа: файлы, токены, правила и итог.
 AnalysisResult AnalyzerEngine::analyzeProject(const std::filesystem::path& root, const Config& config) const
 {
     AnalysisResult result;

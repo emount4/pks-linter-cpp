@@ -7,6 +7,7 @@
 
 namespace {
 
+// Возвращает копию строки без начальных пробелов.
 std::string ltrimCopy(const std::string& s)
 {
     std::size_t i = 0;
@@ -16,6 +17,7 @@ std::string ltrimCopy(const std::string& s)
     return s.substr(i);
 }
 
+// Проверяет, является ли строка препроцессорной директивой.
 bool isPreprocessorLine(const FileContext& file, int line)
 {
     if (line <= 0 || static_cast<std::size_t>(line) > file.lines.size()) {
@@ -25,11 +27,13 @@ bool isPreprocessorLine(const FileContext& file, int line)
     return !t.empty() && t[0] == '#';
 }
 
+// Проверяет обычный пробел или табуляцию.
 bool isWhitespace(char c)
 {
     return c == ' ' || c == '\t';
 }
 
+// Эвристически определяет, похож ли токен на имя типа.
 bool isTypeLike(const Token& t)
 {
     if (t.kind == TokenKind::Keyword) {
@@ -41,6 +45,7 @@ bool isTypeLike(const Token& t)
         std::isupper(static_cast<unsigned char>(t.lexeme.front())) != 0;
 }
 
+// Проверяет, стоит ли оператор в унарном контексте.
 bool isUnaryContext(const std::vector<Token>& tokens, std::size_t index)
 {
     if (index == 0) {
@@ -51,6 +56,7 @@ bool isUnaryContext(const std::vector<Token>& tokens, std::size_t index)
         prev == "+" || prev == "-" || prev == "*" || prev == "/" || prev == "%";
 }
 
+// Проверяет, является ли '*' или '&' частью объявления указателя/ссылки.
 bool isPointerOrReferenceDeclarator(const std::vector<Token>& tokens, std::size_t index)
 {
     if (index == 0 || index + 1 >= tokens.size()) {
@@ -65,6 +71,7 @@ bool isPointerOrReferenceDeclarator(const std::vector<Token>& tokens, std::size_
 
 } // пространство имен
 
+// Проверяет пробелы вокруг операторов и после запятых.
 void SpacingRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     const std::unordered_set<std::string> ops{

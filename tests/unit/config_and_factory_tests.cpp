@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+// Проверяет, что ConfigManager хранит единую активную конфигурацию.
 TEST_CASE("ConfigManager is a singleton and stores one active config")
 {
     auto& first = ConfigManager::instance();
@@ -31,6 +32,7 @@ TEST_CASE("ConfigManager is a singleton and stores one active config")
     REQUIRE(second.get().maxLineLength == 120);
 }
 
+// Проверяет чтение включенных правил и алиасов стилей именования из config.
 TEST_CASE("ConfigLoader parses enabled rules and naming aliases")
 {
     auto dir = makeTempDir("cfg_loader_parse");
@@ -56,6 +58,7 @@ TEST_CASE("ConfigLoader parses enabled rules and naming aliases")
     REQUIRE(loaded.config.constantNaming == NamingStyle::UpperSnake);
 }
 
+// Проверяет, что сохраненный config загружается обратно без потери основных настроек.
 TEST_CASE("ConfigLoader save and load round-trips the main settings")
 {
     auto dir = makeTempDir("cfg_loader_roundtrip");
@@ -82,6 +85,7 @@ TEST_CASE("ConfigLoader save and load round-trips the main settings")
     REQUIRE(loaded.config.maxLineLength == 100);
 }
 
+// Проверяет создание встроенных правил по каноническим идентификаторам.
 TEST_CASE("RuleFactory creates built-in rules by canonical id")
 {
     auto rule = RuleFactory::createById("STYLE-INDENTATION");
@@ -92,6 +96,7 @@ TEST_CASE("RuleFactory creates built-in rules by canonical id")
     REQUIRE(RuleFactory::createById("UNKNOWN-RULE") == nullptr);
 }
 
+// Проверяет создание правил из списка enabled.rules с короткими алиасами.
 TEST_CASE("RuleFactory creates rules from enabled.rules aliases")
 {
     Config config;
@@ -106,22 +111,4 @@ TEST_CASE("RuleFactory creates rules from enabled.rules aliases")
     REQUIRE(rules[3]->id() == "STYLE-NAMING");
     REQUIRE(rules[4]->id() == "BUG-USE-BEFORE-INIT");
     REQUIRE(rules[5]->id() == "BUG-MEMORY-LEAK");
-}
-
-TEST_CASE("RuleFactory derives enabled rules from legacy boolean flags")
-{
-    Config config;
-    config.indentationEnabled = true;
-    config.spacingEnabled = false;
-    config.lineLengthEnabled = true;
-    config.namingEnabled = true;
-    config.useBeforeInitEnabled = false;
-    config.memoryLeakEnabled = true;
-
-    auto ids = RuleFactory::enabledRuleIdsFromFlags(config);
-    REQUIRE(ids.size() == 4);
-    REQUIRE(ids[0] == "STYLE-INDENTATION");
-    REQUIRE(ids[1] == "STYLE-LINE-LENGTH");
-    REQUIRE(ids[2] == "STYLE-NAMING");
-    REQUIRE(ids[3] == "BUG-MEMORY-LEAK");
 }

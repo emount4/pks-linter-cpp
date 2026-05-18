@@ -14,5 +14,6 @@ struct InteractiveSessionResult {
 
 class InteractiveConfig {
 public:
+    // Собирает настройки интерактивного режима из потоков ввода и вывода.
     static InteractiveSessionResult collect(std::istream& input, std::ostream& output, Config defaults = {});
 };

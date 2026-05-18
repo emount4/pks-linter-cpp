@@ -3,6 +3,7 @@
 #include "ConfigLoader.h"
 #include "test_support.h"
 
+// Проверяет чтение секционного INI-конфига.
 TEST_CASE("ConfigLoader reads sectioned SRS config with severity and excludes")
 {
     auto dir = makeTempDir("cfg_sectioned");
@@ -37,6 +38,7 @@ TEST_CASE("ConfigLoader reads sectioned SRS config with severity and excludes")
     REQUIRE(loaded.config.excludedFiles == std::vector<std::string>{"skip.cpp"});
 }
 
+// Проверяет устойчивость к отсутствующему config и некорректным числам.
 TEST_CASE("ConfigLoader keeps defaults on missing file and invalid numbers")
 {
     auto missing = ConfigLoader::loadFromFile("definitely_missing_config.ini");
@@ -50,4 +52,18 @@ TEST_CASE("ConfigLoader keeps defaults on missing file and invalid numbers")
     REQUIRE(loaded.config.indentSize == Config{}.indentSize);
     REQUIRE(loaded.config.maxLineLength == Config{}.maxLineLength);
     REQUIRE_FALSE(loaded.diagnostics.empty());
+}
+
+// Проверяет сохранение config.ini при указании директории вместо имени файла.
+TEST_CASE("ConfigLoader saves config.ini when output path is directory")
+{
+    auto dir = makeTempDir("cfg_save_dir");
+    std::string error;
+    Config config;
+
+    REQUIRE(ConfigLoader::saveToFile(config, dir, &error));
+    REQUIRE(std::filesystem::exists(dir / "config.ini"));
+
+    auto loaded = ConfigLoader::loadFromFile(dir / "config.ini");
+    REQUIRE(loaded.config.maxLineLength == config.maxLineLength);
 }

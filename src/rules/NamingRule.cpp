@@ -9,6 +9,7 @@
 
 namespace {
 
+// Возвращает копию строки без начальных пробелов.
 std::string ltrimCopy(const std::string& s)
 {
     std::size_t i = 0;
@@ -18,6 +19,7 @@ std::string ltrimCopy(const std::string& s)
     return s.substr(i);
 }
 
+// Проверяет имя на стиль lowerCamelCase.
 bool isLowerCamel(const std::string& s)
 {
     if (s.empty()) {
@@ -37,6 +39,7 @@ bool isLowerCamel(const std::string& s)
     return true;
 }
 
+// Проверяет имя на стиль UpperCamelCase.
 bool isUpperCamel(const std::string& s)
 {
     if (s.empty()) {
@@ -56,6 +59,7 @@ bool isUpperCamel(const std::string& s)
     return true;
 }
 
+// Проверяет имя на стиль snake_case.
 bool isLowerSnake(const std::string& s)
 {
     if (s.empty()) {
@@ -78,6 +82,7 @@ bool isLowerSnake(const std::string& s)
     return true;
 }
 
+// Проверяет имя на стиль UPPER_SNAKE_CASE.
 bool isUpperSnake(const std::string& s)
 {
     if (s.empty()) {
@@ -100,6 +105,7 @@ bool isUpperSnake(const std::string& s)
     return true;
 }
 
+// Проверяет, соответствует ли имя выбранному стилю.
 bool matchesStyle(const std::string& name, NamingStyle style)
 {
     switch (style) {
@@ -117,6 +123,7 @@ bool matchesStyle(const std::string& name, NamingStyle style)
     return true;
 }
 
+// Возвращает текстовую метку стиля для сообщения пользователю.
 std::string styleLabel(NamingStyle style)
 {
     switch (style) {
@@ -134,6 +141,7 @@ std::string styleLabel(NamingStyle style)
     return "any";
 }
 
+// Проверяет, является ли токен ключевым словом типа.
 bool isTypeKeyword(const Token& t)
 {
     if (t.kind != TokenKind::Keyword) {
@@ -145,6 +153,7 @@ bool isTypeKeyword(const Token& t)
     return types.find(t.lexeme) != types.end();
 }
 
+// Проверяет, является ли токен квалификатором объявления.
 bool isQualifier(const Token& t)
 {
     if (t.kind != TokenKind::Keyword) {
@@ -262,6 +271,7 @@ bool tryParseVarDecl(const std::vector<Token>& toks, std::size_t idx, std::vecto
 
 } // пространство имен
 
+// Применяет проверку именования к макросам, функциям и переменным.
 void NamingRule::apply(const FileContext& file, const Config& config, AnalysisResult& result) const
 {
     const auto severity = configuredSeverity(config, id());

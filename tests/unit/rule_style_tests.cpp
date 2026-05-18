@@ -6,6 +6,7 @@
 #include "rules/SpacingRule.h"
 #include "test_support.h"
 
+// Проверяет основные стилевые правила на одном наборе исходного кода.
 TEST_CASE("Style rules cover spacing, indentation, line length, and naming")
 {
     Config cfg;
@@ -29,6 +30,7 @@ TEST_CASE("Style rules cover spacing, indentation, line length, and naming")
     REQUIRE(result.warningCount() >= 5);
 }
 
+// Проверяет, что правило пробелов не ругается на унарный минус и ++.
 TEST_CASE("SpacingRule ignores unary minus and increment operators")
 {
     auto ctx = makeFileContextFromText("spacing_ok.cpp", "int main(){ int a = -1; ++a; --a; return a; }\n");

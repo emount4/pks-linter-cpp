@@ -5,16 +5,19 @@
 
 namespace {
 
+// Проверяет, может ли символ начинать идентификатор.
 bool isIdentStart(char c)
 {
     return std::isalpha(static_cast<unsigned char>(c)) != 0 || c == '_';
 }
 
+// Проверяет, может ли символ входить в идентификатор.
 bool isIdentChar(char c)
 {
     return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_';
 }
 
+// Возвращает множество ключевых слов C++, известных токенизатору.
 const std::unordered_set<std::string>& keywords()
 {
     static const std::unordered_set<std::string> k{
@@ -32,6 +35,7 @@ const std::unordered_set<std::string>& keywords()
     return k;
 }
 
+// Проверяет, начинается ли указанная строка в заданной позиции.
 bool matchAt(const std::string& input, std::size_t pos, const std::string& s)
 {
     if (pos + s.size() > input.size()) {
@@ -45,8 +49,9 @@ bool matchAt(const std::string& input, std::size_t pos, const std::string& s)
     return true;
 }
 
-}
+} // пространство имен
 
+// Разбивает входной текст на токены учебного подмножества C++.
 TokenizationResult Tokenizer::tokenize(const std::string& input) const
 {
     TokenizationResult res;
