@@ -37,11 +37,18 @@
 
 ## Требования
 
+Для локальной сборки:
+
 - Windows.
 - PowerShell.
 - CMake 3.16 или новее.
 - Компилятор C++17, например MSVC.
-- Catch2 v3 для тестов. Если Catch2 не найден, CMake загрузит его автоматически через `FetchContent`.
+- Catch2 v3 для тестов. Если Catch2 не найден, CMake загрузит его автоматически через FetchContent.
+
+Для запуска через Docker:
+
+- Docker Desktop.
+- Включенный режим Linux containers.
 
 ## Сборка
 
@@ -67,6 +74,45 @@ ctest --test-dir build --output-on-failure -C Release
 
 ```powershell
 .\build\cpp_linter.exe
+```
+
+## Контейнеризация (Docker)
+
+Сборка образа (в процессе сборки выполняются все тесты через CTest):
+
+```powershell
+docker build -t cpp-linter .
+```
+
+Запуск контейнера с демонстрационным проектом (по умолчанию):
+
+```powershell
+docker run --rm cpp-linter
+```
+
+Запуск на своем проекте с передачей аргументов (папка монтируется в `/work`):
+
+```powershell
+docker run --rm -v "PWD:/work" cpp-linter --project /work --mode full
+```
+
+Запуск с конфигурацией из образа:
+
+```powershell
+docker run --rm -v "PWD:/work" cpp-linter --project /work --config /opt/cpp_linter/share/config.example.ini
+```
+
+Интерактивный режим:
+
+```powershell
+docker run --rm -it -v "PWD:/work" cpp-linter --interactive
+```
+
+Запуск тестов внутри контейнера (отдельный stage):
+
+```powershell
+docker build --target test -t cpp-linter-test .
+docker run --rm cpp-linter-test
 ```
 
 ## Запуск
